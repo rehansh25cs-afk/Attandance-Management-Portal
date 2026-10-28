@@ -1,4 +1,5 @@
 import { NavLink } from "react-router";
+import { useSelector } from "react-redux";
 
 const navItems = [
     {
@@ -28,8 +29,18 @@ const navItems = [
     },
 ];
 
-const CandidateSidebar = ({ isOpen = false, onClose = () => {} }) => (
-    <>
+const CandidateSidebar = ({ isOpen = false, onClose = () => {} }) => {
+    const user = useSelector((state) => state.auth.user);
+    const userName = user?.name || user?.email || "Candidate";
+    const userInitials = userName
+        .split(/\s+/)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+
+    return (
+        <>
         {isOpen && (
             <button
                 type="button"
@@ -71,15 +82,16 @@ const CandidateSidebar = ({ isOpen = false, onClose = () => {} }) => (
 
             <div className="border-t border-slate-100 p-4">
                 <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">SJ</div>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">{userInitials}</div>
                     <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">Sarah Johnson</p>
+                        <p className="truncate text-sm font-semibold text-slate-800">{userName}</p>
                         <p className="truncate text-xs text-slate-500">Candidate</p>
                     </div>
                 </div>
             </div>
         </aside>
-    </>
-);
+        </>
+    );
+};
 
 export default CandidateSidebar;
