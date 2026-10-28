@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../Hooks/useAuth";
 import { useNavigate } from "react-router";
+import { setError } from "../state/auth.slice";
+import ErrorToast from "../../Shared/Components/ErrorToast";
 
 /* ─── Icons ──────────────────────────────────────────────────────────────── */
 const BuildingIcon = () => (
@@ -54,12 +56,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const navigate = useNavigate();
-  const { handleLogin } = useAuth();
+  const navigate  = useNavigate();
+  const dispatch  = useDispatch();
+  const { handleLogin, handleGetMe } = useAuth();
   const {
     loading: isLoading,
     error: formError,
   } = useSelector((state) => state.auth);
+
+  const dismissError = () => dispatch(setError(null));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,14 +79,39 @@ const Login = () => {
         navigate("/candidate/dashboard", { replace: true });
       }
     } catch {
-      // The hook stores the login error in Redux for the form to display.
+      // The hook stores the login error in Redux for the ErrorToast to display.
     }
   };
+
+  const fetchUser = useCallback(async () => {
+
+    try {
+      const response = await handleGetMe();
+      const user = response?.user;
+
+      if (user?.permissions === "admin" || user?.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      }
+      else if (user?.permissions === "candidate" || user?.role === "candidate") {
+        navigate("/candidate/dashboard", { replace: true });
+      }
+    } catch {
+      // An unauthenticated visitor stays on the login page.
+    }
+
+  }, [handleGetMe, navigate]);
+
+  // useEffect(() => {
+  //   fetchUser();
+  // }, [fetchUser]);
 
 
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f9fafb" }}>
+
+      {/* ── Animated error popup ─────────────────────────────────────────── */}
+      <ErrorToast message={formError} onDismiss={dismissError} />
 
       {/* ══════════════════════
           LEFT PANEL
@@ -339,24 +369,6 @@ const Login = () => {
                 </button>
               </div>
             </div>
-
-            {/* Error */}
-            {formError && (
-              <div
-                style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  backgroundColor: "#fff1f2",
-                  border: "1px solid #fecdd3",
-                  borderRadius: "8px",
-                  padding: "10px 14px",
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" style={{ width: "16px", height: "16px", color: "#f43f5e", flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-                <p role="alert" style={{ fontSize: "13px", color: "#e11d48", margin: 0 }}>{formError}</p>
-              </div>
-            )}
 
             {/* Submit button */}
             <button

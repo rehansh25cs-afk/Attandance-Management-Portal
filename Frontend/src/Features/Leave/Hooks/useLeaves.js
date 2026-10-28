@@ -15,16 +15,17 @@ export const useLeaves = () => {
             dispatch(setError(null));
             return data;
         } catch (error) {
-            dispatch(setError(error.message || 'Request leave failed'));
+            const msg = error?.message || 'Failed to submit leave request. Please try again.';
+            dispatch(setError(msg));
             throw error;
         } finally {
             dispatch(setLoading(false));
         }
-        
+
     }
 
 
-    const handleGetLeaves = async() => {
+    const handleGetLeaves = async () => {
 
         dispatch(setLoading(true));
 
@@ -33,17 +34,18 @@ export const useLeaves = () => {
             dispatch(setLeaves(data.data ?? data));
             dispatch(setError(null));
             return data;
-        }catch (error) {
-            dispatch(setError(error.message || 'Get leaves failed'));
+        } catch (error) {
+            const msg = error?.message || 'Failed to load leave requests. Please try again.';
+            dispatch(setError(msg));
             throw error;
         } finally {
             dispatch(setLoading(false));
         }
-        
+
     }
 
 
-    const handleGetAllLeaves = async() => {
+    const handleGetAllLeaves = async () => {
 
         dispatch(setLoading(true));
 
@@ -52,18 +54,18 @@ export const useLeaves = () => {
             dispatch(setLeaves(data.data ?? data));
             dispatch(setError(null));
             return data;
-        }catch (error) {
-            dispatch(setError(error.message || 'Get all leaves failed'));
+        } catch (error) {
+            const msg = error?.message || 'Failed to load leave requests. Please try again.';
+            dispatch(setError(msg));
             throw error;
         } finally {
             dispatch(setLoading(false));
         }
-        
+
     }
 
 
-
-    const handleUpdateLeaveStatus = async({ leaveId, status }) => {
+    const handleUpdateLeaveStatus = async ({ leaveId, status }) => {
 
         dispatch(setLoading(true));
 
@@ -72,14 +74,14 @@ export const useLeaves = () => {
             dispatch(setError(null));
             return data;
         } catch (error) {
-            dispatch(setError(error.message || 'Update leave status failed'));
+            const msg = error?.message || 'Failed to update leave status. Please try again.';
+            dispatch(setError(msg));
             throw error;
         } finally {
             dispatch(setLoading(false));
         }
-        
-    }
 
+    }
 
 
     return {
@@ -88,5 +90,5 @@ export const useLeaves = () => {
         handleGetAllLeaves,
         handleUpdateLeaveStatus,
     }
-    
+
 }

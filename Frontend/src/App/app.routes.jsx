@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import AdminDashboard from "../Features/Dashboard/Pages/AdminDashboard";
-import AdminAttandance from "../Features/Attendance/Pages/AdminAttandance";
+import AdminAttendance from "../Features/Attendance/Pages/AdminAttendance";
 import AdminCandidates from "../Features/Candidates/Pages/AdminCandidates";
 import AdminLeave from "../Features/Leave/Pages/AdminLeave";
 import AdminTasks from './../Features/Tasks/Pages/AdminTasks';
@@ -11,6 +11,7 @@ import CandidateTasks from "../Features/Tasks/Pages/CandidateTasks";
 import CandidateLeave from "../Features/Leave/Pages/CandidateLeave";
 import CandidateAnnouncements from "../Features/Announcements/Pages/CandidateAnnouncements";
 import Login from "../Features/Auth/Pages/Login";
+import Protected from "../Features/Auth/Components/Protected";
 
 
 
@@ -27,27 +28,27 @@ export const routes = createBrowserRouter([
     // admin routes
     {
         path: "/admin/dashboard",
-        element: <AdminDashboard />
+        element: <Protected permissions={"admin"}> <AdminDashboard /></Protected>
     },
     {
         path: "/admin/announcements",
-        element: <AdminAnnouncements />
+        element: <Protected permissions={"admin"}><AdminAnnouncements /></Protected>
     },
     {
         path: "/admin/attendance",
-        element: <AdminAttandance />
+        element: <Protected permissions={"admin"}><AdminAttendance /></Protected>
     },
     {
         path: "/admin/candidates",
-        element: <AdminCandidates />
+        element: <Protected permissions={"admin"}><AdminCandidates /></Protected>
     },
     {
         path: "/admin/leave",
-        element: <AdminLeave />
+        element: <Protected permissions={"admin"}><AdminLeave /></Protected>
     },
     {
         path: "/admin/tasks",
-        element: <AdminTasks />
+        element: <Protected permissions={"admin"}><AdminTasks /></Protected>
     },
 
 
@@ -57,23 +58,23 @@ export const routes = createBrowserRouter([
     // Candidates routes
     {
         path: "/candidate/announcements",
-        element: <CandidateAnnouncements />
+        element: <Protected permissions={"candidate"}><CandidateAnnouncements /></Protected>
     },
     {
         path: "/candidate/dashboard",
-        element: <CandidateDashboard />
+        element: <Protected permissions={"candidate"}><CandidateDashboard /></Protected>
     },
     {
         path: "/candidate/attendance",
-        element: <CandidateAttendance />
+        element: <Protected permissions={"candidate"}><CandidateAttendance /></Protected>
     },
     {
         path: "/candidate/tasks",
-        element: <CandidateTasks />
+        element: <Protected permissions={"candidate"}><CandidateTasks /></Protected>
     },
     {
         path: "/candidate/leave",
-        element: <CandidateLeave />
+        element: <Protected permissions={"candidate"}><CandidateLeave /></Protected>
     },
     
 ])

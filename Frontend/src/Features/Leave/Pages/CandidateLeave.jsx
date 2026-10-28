@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import CandidateSidebar from "../../Shared/Components/CandidateSidebar";
 import Navbar from "../../Shared/Components/Navbar";
-import { useSelector } from "react-redux";
 import CandidateLeaveHeader from "../Components/CandidateLeaveHeader";
 import CandidateLeaveRequestList from "../Components/CandidateLeaveRequestList";
 import CandidateLeaveSummary from "../Components/CandidateLeaveSummary";
@@ -11,8 +11,11 @@ import {
     toCandidateRequest,
 } from "../Components/leave.utils";
 import { useLeaves } from "../Hooks/useLeaves";
+import ErrorToast from "../../Shared/Components/ErrorToast";
+import { setError } from "../state/leaves.slice";
 
 const CandidateLeave = () => {
+    const dispatch = useDispatch();
     const [showForm, setShowForm] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { handleRequestLeave, handleGetLeaves } = useLeaves();
@@ -42,12 +45,13 @@ const CandidateLeave = () => {
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-900">
+            <ErrorToast message={error} onDismiss={() => dispatch(setError(null))} />
+
             <CandidateSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex min-w-0 flex-1 flex-col">
                 <Navbar onMenuToggle={() => setSidebarOpen((open) => !open)} />
                 <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
                     <CandidateLeaveHeader
-                        error={error}
                         onRequestLeave={() => setShowForm(true)}
                     />
 

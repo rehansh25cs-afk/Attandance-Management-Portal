@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createAnnouncement, pinAnnouncement, getAllAnnouncements } from '../Controllers/announcements.controller.js';
+import { createAnnouncement, pinAnnouncement, getAllAnnouncements, deleteAnnouncement } from '../Controllers/announcements.controller.js';
 import authenticateUser from '../Middleware/auth.middleware.js';
 
 
@@ -28,6 +28,15 @@ announcementsRouter.patch("/pin/:id", authenticateUser, pinAnnouncement);
 // @desc Get all announcements
 // @access Private
 announcementsRouter.get("/getAll", authenticateUser, getAllAnnouncements);
+
+
+
+
+// @route Delete /api/announcements/delete/:id
+// @desc Delete an announcement
+// @access Private
+announcementsRouter.delete("/delete/:id", authenticateUser, deleteAnnouncement);
+
 
 
 

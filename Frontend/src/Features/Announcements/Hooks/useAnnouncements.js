@@ -1,7 +1,8 @@
 import { useDispatch } from "react-redux";
-import { createAnnouncement, getAllAnnouncements, pinAnnouncement } from "../service/announcements.api";
+import { createAnnouncement, deleteAnnouncement, getAllAnnouncements, pinAnnouncement } from "../service/announcements.api";
 import {
     addAnnouncement,
+    removeAnnouncement,
     setAnnouncements,
     setError,
     setLoading,
@@ -23,7 +24,8 @@ export const useAnnouncements = () => {
             dispatch(setAnnouncements(data.announcements ?? data));
             dispatch(setError(null));
         } catch (error) {
-            dispatch(setError(error.message || 'Failed to fetch announcements'));
+            const msg = error?.message || 'Failed to load announcements. Please try again.';
+            dispatch(setError(msg));
         } finally {
             dispatch(setLoading(false));
         }
@@ -39,7 +41,8 @@ export const useAnnouncements = () => {
             dispatch(addAnnouncement(data.announcement));
             dispatch(setError(null));
         } catch (error) {
-            dispatch(setError(error.message || 'Failed to create announcement'));
+            const msg = error?.message || 'Failed to publish announcement. Please try again.';
+            dispatch(setError(msg));
         } finally {
             dispatch(setLoading(false));
         }
@@ -55,12 +58,30 @@ export const useAnnouncements = () => {
             dispatch(updateAnnouncement(data.announcement));
             dispatch(setError(null));
         } catch (error) {
-            dispatch(setError(error.message || 'Failed to pin announcement'));
+            const msg = error?.message || 'Failed to pin announcement. Please try again.';
+            dispatch(setError(msg));
         } finally {
             dispatch(setLoading(false));
-        } 
+        }
     }
 
-    
-    return { handleGetAllAnnouncements, handleCreateAnnouncement, handlePinAnnouncement };
+
+
+    const handleDeleteAnnouncement = async ({ id }) => {
+
+        dispatch(setLoading(true));
+        try {
+            await deleteAnnouncement({ id });
+            dispatch(removeAnnouncement(id));
+            dispatch(setError(null));
+        } catch (error) {
+            const msg = error?.message || 'Failed to delete announcement. Please try again.';
+            dispatch(setError(msg));
+        } finally {
+            dispatch(setLoading(false));
+        }
+
+    };
+
+    return { handleGetAllAnnouncements, handleCreateAnnouncement, handlePinAnnouncement, handleDeleteAnnouncement };
 }

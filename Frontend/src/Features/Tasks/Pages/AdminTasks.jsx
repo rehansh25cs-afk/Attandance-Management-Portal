@@ -7,8 +7,12 @@ import TaskForm from "../Components/TaskForm";
 import TaskSummaryCard from "../Components/TaskSummaryCard";
 import { normalizeTask, taskStatuses } from "../Components/task.utils";
 import { useTasks } from "../Hooks/useTasks";
+import ErrorToast from "../../Shared/Components/ErrorToast";
+import { useDispatch } from "react-redux";
+import { setError } from "../state/tasks.slice";
 
 const AdminTasks = () => {
+    const dispatch = useDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -66,6 +70,8 @@ const AdminTasks = () => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
+            <ErrorToast message={error} onDismiss={() => dispatch(setError(null))} />
+
             <Sidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
@@ -112,12 +118,6 @@ const AdminTasks = () => {
                                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 sm:w-64"
                             />
                         </div>
-
-                        {error && (
-                            <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                                {error}
-                            </p>
-                        )}
 
                         {loading && normalizedTasks.length === 0 ? (
                             <p className="py-12 text-center text-sm text-gray-500">

@@ -55,7 +55,10 @@ export const getLeavesController = async (req, res) => {
 export const getAllLeavesController = async (req, res) => {
 
     try {
-        const leaves = await leavesModel.find();
+        const leaves = await leavesModel
+            .find()
+            .populate("sentBy", "name email role")
+            .sort({ createdAt: -1 });
         res.status(200).json({
             success: true,
             data: leaves

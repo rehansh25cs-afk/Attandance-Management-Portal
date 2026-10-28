@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import AnnouncementCard from "../../Announcements/Components/AnnouncementCard";
 
 /**
@@ -19,9 +18,6 @@ const AnnouncementsCard = ({
   onViewAll,
   className = "",
 }) => {
-
-  const navigate = useNavigate();
-  
   return (
     <div
       className={`bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-3 ${className}`}
@@ -31,7 +27,8 @@ const AnnouncementsCard = ({
         <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
         {onViewAll && (
           <button
-            onClick={navigate("/admin/announcements")}
+            type="button"
+            onClick={onViewAll}
             className="text-xs text-indigo-600 font-medium hover:underline"
           >
             View all

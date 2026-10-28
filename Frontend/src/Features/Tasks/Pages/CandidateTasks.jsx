@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import CandidateSidebar from "../../Shared/Components/CandidateSidebar";
 import Navbar from "../../Shared/Components/Navbar";
 import CandidateTaskCard from "../Components/CandidateTaskCard";
@@ -7,8 +7,11 @@ import CandidateTaskFilters from "../Components/CandidateTaskFilters";
 import TaskDetails from "../Components/TaskDetails";
 import { normalizeTask } from "../Components/task.utils";
 import { useTasks } from "../Hooks/useTasks";
+import ErrorToast from "../../Shared/Components/ErrorToast";
+import { setError } from "../state/tasks.slice";
 
 const CandidateTasks = () => {
+    const dispatch = useDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [filter, setFilter] = useState("All tasks");
     const [query, setQuery] = useState("");
@@ -65,6 +68,8 @@ const CandidateTasks = () => {
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-900">
+            <ErrorToast message={error} onDismiss={() => dispatch(setError(null))} />
+
             <CandidateSidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
@@ -91,12 +96,6 @@ const CandidateTasks = () => {
                         onQueryChange={setQuery}
                         onFilterChange={setFilter}
                     />
-
-                    {error && (
-                        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                            {error}
-                        </p>
-                    )}
 
                     {loading && tasks.length === 0 ? (
                         <p className="py-12 text-center text-sm text-slate-500">

@@ -5,6 +5,7 @@ import cors from "cors";
 import announcementsRouter from "./Routes/announcements.routes.js";
 import tasksRouter from "./Routes/tasks.routes.js";
 import leavesRouter from "./Routes/leaves.routes.js";
+import attendanceRouter from "./Routes/attendance.routes.js";
 
 const app = express();
 
@@ -25,5 +26,7 @@ app.use("/api/announcements", announcementsRouter);
 app.use("/api/tasks", tasksRouter);
 
 app.use("/api/leaves", leavesRouter);
+
+app.use("/api/attendance", attendanceRouter);
 
 export default app;

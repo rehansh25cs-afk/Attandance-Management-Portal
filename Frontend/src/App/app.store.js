@@ -3,6 +3,7 @@ import announcementsReducer from "../Features/Announcements/state/announcements.
 import authReducer from "../Features/Auth/state/auth.slice";
 import tasksReducer from "../Features/Tasks/state/tasks.slice";
 import leavesReducer from "../Features/Leave/state/leaves.slice";
+import attendanceReducer from "../Features/Attendance/state/attendance.slice";
 
 export const store = configureStore({
     reducer: {
@@ -10,5 +11,6 @@ export const store = configureStore({
         announcements: announcementsReducer,
         tasks: tasksReducer,
         leaves: leavesReducer,
+        attendance: attendanceReducer
     },
 });

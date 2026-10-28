@@ -94,3 +94,37 @@ export const getAllAnnouncements = async (req, res) => {
     }
     
 }
+
+
+
+
+export const deleteAnnouncement = async(req, res) => {
+
+    try{
+        const { id } = req.params;
+
+        const announcement = await announcementModel.findById(id);
+
+        if(!announcement){
+            return res.status(404).json({
+                message: "Announcement not found",
+                status: "error"
+            })
+        }
+
+        await announcementModel.findByIdAndDelete(id);
+
+        return res.status(200).json({
+            message: "Announcement deleted successfully",
+            status: "success"
+        })
+
+    }catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message,
+            status: "error"
+        })
+    }
+    
+}

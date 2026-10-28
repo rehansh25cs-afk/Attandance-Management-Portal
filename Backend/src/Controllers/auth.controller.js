@@ -161,3 +161,22 @@ export const getAllCandidatesController = async(req, res) => {
     }
     
 }
+
+
+
+
+
+export const logOutController = async(req, res) => {
+
+    try{
+        res.clearCookie("token");
+        res.status(200).json({
+            message: "User logged out successfully",
+            status: "success"
+        })
+    } catch(error){
+        console.log(error);
+        return res.status(500).json({message: `${error.message} || "Server error"`})
+    }
+    
+}

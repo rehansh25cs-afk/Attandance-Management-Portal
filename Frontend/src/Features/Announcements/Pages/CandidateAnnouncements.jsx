@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import CandidateSidebar from "../../Shared/Components/CandidateSidebar";
 import Navbar from "../../Shared/Components/Navbar";
 import { useAnnouncements } from "../Hooks/useAnnouncements";
+import ErrorToast from "../../Shared/Components/ErrorToast";
+import { setError } from "../state/announcements.slice";
 
 const CandidateAnnouncements = () => {
+    const dispatch = useDispatch();
     const [filter, setFilter] = useState("All updates");
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -13,6 +16,7 @@ const CandidateAnnouncements = () => {
             ? state.announcements.announcements
             : []
     ));
+    const error = useSelector((state) => state.announcements.error);
 
     const {
         handleGetAllAnnouncements,
@@ -37,6 +41,8 @@ const CandidateAnnouncements = () => {
 
     return (
         <div className="flex min-h-screen bg-slate-50 text-slate-900">
+            <ErrorToast message={error} onDismiss={() => dispatch(setError(null))} />
+
             <CandidateSidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}

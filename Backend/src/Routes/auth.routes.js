@@ -1,5 +1,5 @@
 import {Router} from "express";
-import { getAllCandidatesController, getMeController, loginController, registerController } from "../Controllers/auth.controller.js";
+import { getAllCandidatesController, getMeController, logOutController, loginController, registerController } from "../Controllers/auth.controller.js";
 import authenticateUser from "../Middleware/auth.middleware.js";
 
 const authRouter = Router();
@@ -23,7 +23,7 @@ authRouter.post("/login", loginController);
 
 
 // @route GET /api/auth/get-me
-// method GET
+// method POST
 // @desc Get the logged in user
 // @access Private
 authRouter.get("/get-me", authenticateUser, getMeController);
@@ -35,6 +35,20 @@ authRouter.get("/get-me", authenticateUser, getMeController);
 // @desc Get all candidates
 // @access Private
 authRouter.get("/get-all-candidates", authenticateUser, getAllCandidatesController);
+
+
+
+
+// @route POST /api/auth/logout
+// method GET
+// @desc Logout a user
+// @access Private
+authRouter.post("/logout", authenticateUser, logOutController);
+
+
+
+
+
 
 
 export default authRouter;

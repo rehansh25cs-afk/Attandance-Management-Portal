@@ -24,6 +24,11 @@ const announcementsSlice = createSlice({
                     : announcement,
             );
         },
+        removeAnnouncement: (state, action) => {
+            state.announcements = state.announcements.filter(
+                (announcement) => announcement._id !== action.payload,
+            );
+        },
         setLoading: (state, action) => {
             state.loading = action.payload
         },
@@ -40,6 +45,7 @@ export const {
     setAnnouncements,
     addAnnouncement,
     updateAnnouncement,
+    removeAnnouncement,
     setLoading,
     setError,
 } = announcementsSlice.actions;

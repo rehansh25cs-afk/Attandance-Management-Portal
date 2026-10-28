@@ -3,23 +3,32 @@ import Sidebar from "../../Shared/Components/AdminSidebar";
 import Navbar from "../../Shared/Components/Navbar";
 import { useEffect } from "react";
 import { useAnnouncements } from "../Hooks/useAnnouncements";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import ErrorToast from "../../Shared/Components/ErrorToast";
+import { setError } from "../state/announcements.slice";
 
 
 
 const AdminAnnouncements = () => {
 
+    const dispatch = useDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [filter, setFilter] = useState("All updates");
 
-    const { handleGetAllAnnouncements, handleCreateAnnouncement, handlePinAnnouncement } = useAnnouncements();
+    const {
+        handleGetAllAnnouncements,
+        handleCreateAnnouncement,
+        handlePinAnnouncement,
+        handleDeleteAnnouncement,
+    } = useAnnouncements();
 
     const announcements = useSelector((state) =>
         Array.isArray(state.announcements.announcements)
             ? state.announcements.announcements
             : [],
     );
+    const error = useSelector((state) => state.announcements.error);
 
 
 
@@ -49,8 +58,14 @@ const AdminAnnouncements = () => {
         setShowForm(false);
     };
 
-    const togglePinned = async(announcementId) => {
+    const togglePinned = async (announcementId) => {
         await handlePinAnnouncement({ id: announcementId });
+    };
+
+    const removeAnnouncement = async (announcementId) => {
+        if (!window.confirm("Delete this announcement?")) return;
+
+        await handleDeleteAnnouncement({ id: announcementId });
     };
 
     const visibleAnnouncements = announcements.filter(
@@ -63,6 +78,8 @@ const AdminAnnouncements = () => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
+            <ErrorToast message={error} onDismiss={() => dispatch(setError(null))} />
+
             <Sidebar
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
@@ -216,22 +233,36 @@ const AdminAnnouncements = () => {
                                                         {announcement.author}
                                                     </span>
                                                     <span className="text-xs text-gray-400">
-                                                        Â· {announcement.date}
+                                                        · {announcement.date}
                                                     </span>
                                                 </div>
 
-                                                <button
-                                                    onClick={() =>
-                                                        togglePinned(
-                                                            announcement._id,
-                                                        )
-                                                    }
-                                                    className="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-indigo-600"
-                                                >
-                                                    {announcement.pinned
-                                                        ? "Unpin"
-                                                        : "Pin announcement"}
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            togglePinned(
+                                                                announcement._id,
+                                                            )
+                                                        }
+                                                        className="rounded-md px-2 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-indigo-600"
+                                                    >
+                                                        {announcement.pinned
+                                                            ? "Unpin"
+                                                            : "Pin announcement"}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            removeAnnouncement(
+                                                                announcement._id,
+                                                            )
+                                                        }
+                                                        className="rounded-md px-2 py-1 text-xs font-medium text-red-500 hover:bg-red-50 hover:text-red-600"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -276,7 +307,7 @@ const AdminAnnouncements = () => {
                                 aria-label="Close"
                                 className="rounded-md px-2 text-xl text-gray-400 hover:bg-gray-100"
                             >
-                                Ã—
+                                &times;
                             </button>
                         </div>
 

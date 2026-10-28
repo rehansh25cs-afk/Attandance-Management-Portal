@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router";
 import Sidebar from "../../Shared/Components/AdminSidebar";
 import Navbar from "../../Shared/Components/Navbar";
 import Statcard from "../Components/Statcard";
 import AnnouncementsCard from "../Components/AnnouncementsCard";
+import { useAttendance } from "../../Attendance/Hooks/useAttendance";
+import {
+    formatAttendanceTime,
+    getAdminAttendanceSummary,
+    getLocalDateInputValue,
+} from "../../Attendance/utils/attendance.utils";
+import { useTasks } from "../../Tasks/Hooks/useTasks";
+import { normalizeTask } from "../../Tasks/Components/task.utils";
+import { useLeaves } from "../../Leave/Hooks/useLeaves";
+import { getCandidateName } from "../../Leave/Components/leave.utils";
+import { useAnnouncements } from "../../Announcements/Hooks/useAnnouncements";
 
 /* ── Stat Icons ─────────────────────────────────────────── */
 const CandidatesIcon = () => (
@@ -29,55 +42,6 @@ const LeaveIcon = () => (
     </svg>
 );
 
-/* ── Recent Activity Data ───────────────────────────────── */
-const recentActivity = [
-    {
-        id: 1,
-        type: "check-in",
-        user: "Sarah Johnson",
-        action: "checked in",
-        time: "9:02 AM",
-        avatar: "SJ",
-        color: "green",
-    },
-    {
-        id: 2,
-        type: "task",
-        user: "Ali Raza",
-        action: "completed Task #12 – Report Submission",
-        time: "9:45 AM",
-        avatar: "AR",
-        color: "indigo",
-    },
-    {
-        id: 3,
-        type: "leave",
-        user: "Maria Khan",
-        action: "submitted a leave request",
-        time: "10:15 AM",
-        avatar: "MK",
-        color: "amber",
-    },
-    {
-        id: 4,
-        type: "announcement",
-        user: "Admin",
-        action: "posted a new announcement",
-        time: "11:00 AM",
-        avatar: "AD",
-        color: "rose",
-    },
-    {
-        id: 5,
-        type: "check-in",
-        user: "Omar Sheikh",
-        action: "checked in (late)",
-        time: "11:32 AM",
-        avatar: "OS",
-        color: "amber",
-    },
-];
-
 const avatarColors = {
     green: "bg-green-100 text-green-700",
     indigo: "bg-indigo-100 text-indigo-700",
@@ -92,144 +56,329 @@ const dotColors = {
     rose: "bg-rose-400",
 };
 
-/* ── Announcements Data ─────────────────────────────────── */
-const announcementItems = [
-    {
-        id: 1,
-        emoji: "📢",
-        title: "Q4 Review Schedule",
-        body: "All departments must submit their Q4 reports by Oct 15.",
-        meta: "Posted today · Admin",
-        accent: "indigo",
-    },
-    {
-        id: 2,
-        emoji: "🎉",
-        title: "Team Outing – Oct 20",
-        body: "Company outing planned. Mark your calendars!",
-        meta: "Yesterday · HR Team",
-        accent: "gray",
-    },
-];
+const announcementAccents = {
+    "Company update": "indigo",
+    "People & culture": "green",
+    Reminder: "amber",
+};
 
-/* ── Dashboard Page ─────────────────────────────────────── */
+const announcementEmojis = {
+    "Company update": "📢",
+    "People & culture": "🎉",
+    Reminder: "⏰",
+};
+
+const getInitials = (name) =>
+    String(name || "AD")
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+
+const formatRelativeDay = (value) => {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+        return "Posted today";
+    }
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return "Yesterday";
+    }
+
+    return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+    });
+};
+
+const formatActivityTime = (value) => {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const time = formatAttendanceTime(date);
+
+    if (date.toDateString() === today.toDateString()) {
+        return time;
+    }
+
+    if (date.toDateString() === yesterday.toDateString()) {
+        return `Yesterday, ${time}`;
+    }
+
+    return `${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
+};
+
 const Dashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const navigate = useNavigate();
+    const { handleGetAllAttendance } = useAttendance();
+    const { handleGetAllTasks, tasks } = useTasks();
+    const { handleGetAllLeaves } = useLeaves();
+    const { handleGetAllAnnouncements } = useAnnouncements();
+
+    const user = useSelector((state) => state.auth.user);
+    const {
+        attendanceRecords,
+        totalTeam,
+        loading: attendanceLoading,
+        error: attendanceError,
+    } = useSelector((state) => state.attendance);
+    const { loading: tasksLoading, error: tasksError } = useSelector((state) => state.tasks);
+    const {
+        leaves,
+        loading: leavesLoading,
+        error: leavesError,
+    } = useSelector((state) => state.leaves);
+    const announcements = useSelector((state) =>
+        Array.isArray(state.announcements.announcements)
+            ? state.announcements.announcements
+            : []
+    );
+    const announcementsError = useSelector((state) => state.announcements.error);
+
+    useEffect(() => {
+        handleGetAllAttendance(getLocalDateInputValue());
+        handleGetAllTasks().catch(() => undefined);
+        handleGetAllLeaves().catch(() => undefined);
+        handleGetAllAnnouncements();
+    }, [handleGetAllAttendance, handleGetAllTasks]);
+
+    const summary = getAdminAttendanceSummary(attendanceRecords, totalTeam);
+    const pendingTasks = useMemo(
+        () => tasks.map(normalizeTask).filter((task) => task.status !== "Done"),
+        [tasks]
+    );
+    const leaveList = useMemo(
+        () => (Array.isArray(leaves) ? leaves : []),
+        [leaves]
+    );
+    const pendingLeaves = leaveList.filter((leave) => leave.status === "Pending");
+    const firstName = user?.name?.split(" ")[0] || "Admin";
+    const errorMessage = attendanceError || tasksError || leavesError || announcementsError;
+
+    const announcementItems = useMemo(() => {
+        return [...announcements]
+            .sort((left, right) => new Date(right.time || 0) - new Date(left.time || 0))
+            .slice(0, 3)
+            .map((announcement) => ({
+                id: announcement._id ?? announcement.id,
+                emoji: announcementEmojis[announcement.category] || "📢",
+                title: announcement.title,
+                body: announcement.body,
+                meta: `${formatRelativeDay(announcement.time)} · ${announcement.author || "Admin"}`,
+                accent: announcementAccents[announcement.category] || "gray",
+            }));
+    }, [announcements]);
+
+    const recentActivity = useMemo(() => {
+        const checkInItems = attendanceRecords.map((record) => {
+            const person = typeof record.user === "object" && record.user
+                ? record.user.name || record.user.email || "Candidate"
+                : "Candidate";
+            const isLate = record.status === "Late";
+
+            return {
+                id: `attendance-${record._id}`,
+                type: "check-in",
+                user: person,
+                action: isLate ? "checked in (late)" : "checked in",
+                time: formatActivityTime(record.checkInTime),
+                timestamp: new Date(record.checkInTime || 0).getTime(),
+                avatar: getInitials(person),
+                color: isLate ? "amber" : "green",
+            };
+        });
+
+        const taskItems = tasks.map(normalizeTask)
+            .filter((task) => task.status === "Done")
+            .map((task) => ({
+                id: `task-${task.id}`,
+                type: "task",
+                user: task.assignee || "Candidate",
+                action: `completed ${task.title}`,
+                time: formatActivityTime(task.updatedAt || task.createdAt),
+                timestamp: new Date(task.updatedAt || task.createdAt || 0).getTime(),
+                avatar: getInitials(task.assignee),
+                color: "indigo",
+            }));
+
+        const leaveItems = leaveList.map((leave) => {
+            const person = getCandidateName(leave.sentBy);
+
+            return {
+                id: `leave-${leave._id}`,
+                type: "leave",
+                user: person,
+                action: "submitted a leave request",
+                time: formatActivityTime(leave.createdAt),
+                timestamp: new Date(leave.createdAt || 0).getTime(),
+                avatar: getInitials(person),
+                color: "amber",
+            };
+        });
+
+        const announcementActivity = announcements.map((announcement) => ({
+            id: `announcement-${announcement._id ?? announcement.id}`,
+            type: "announcement",
+            user: announcement.author || "Admin",
+            action: "posted a new announcement",
+            time: formatActivityTime(announcement.time),
+            timestamp: new Date(announcement.time || 0).getTime(),
+            avatar: getInitials(announcement.author || "Admin"),
+            color: "rose",
+        }));
+
+        return [...checkInItems, ...taskItems, ...leaveItems, ...announcementActivity]
+            .sort((left, right) => right.timestamp - left.timestamp)
+            .slice(0, 5);
+    }, [announcements, attendanceRecords, leaveList, tasks]);
+
+    const isLoading = attendanceLoading || tasksLoading || leavesLoading;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden">
-            {/* Sidebar */}
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            {/* Main content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Navbar */}
-                <Navbar onMenuToggle={() => setSidebarOpen((o) => !o)} />
+                <Navbar onMenuToggle={() => setSidebarOpen((open) => !open)} />
 
-                {/* Scrollable body */}
                 <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
-
-                    {/* Welcome banner */}
                     <div className="mb-6">
-                        <h2 className="text-xl font-bold text-gray-800">Welcome back, Admin! </h2>
+                        <h2 className="text-xl font-bold text-gray-800">Welcome back, {firstName}!</h2>
                         <p className="text-sm text-gray-500 mt-0.5">Here's your organization's overview for today.</p>
                     </div>
 
-                    {/* Stat cards grid */}
+                    {errorMessage && (
+                        <p className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {errorMessage}
+                        </p>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                         <Statcard
                             title="Candidates"
-                            value={48}
+                            value={isLoading && !summary.totalTeam ? "—" : summary.totalTeam}
                             icon={<CandidatesIcon />}
-                            trend={4}
-                            trendLabel="vs last month"
+                            trendLabel="Registered team members"
                             accentColor="indigo"
                         />
                         <Statcard
                             title="Present Today"
-                            value={36}
+                            value={attendanceLoading ? "—" : summary.present}
                             icon={<PresentIcon />}
-                            trend={2}
-                            trendLabel="vs yesterday"
+                            trendLabel={`${summary.attendanceRate}% of the team`}
                             accentColor="green"
                         />
                         <Statcard
                             title="Pending Tasks"
-                            value={12}
+                            value={tasksLoading ? "—" : pendingTasks.length}
                             icon={<TasksIcon />}
-                            trend={-3}
-                            trendLabel="vs last week"
+                            trendLabel="Not completed"
                             accentColor="amber"
                         />
                         <Statcard
                             title="Leave Requests"
-                            value={3}
+                            value={leavesLoading ? "—" : pendingLeaves.length}
                             icon={<LeaveIcon />}
                             trendLabel="Awaiting approval"
                             accentColor="rose"
                         />
                     </div>
 
-                    {/* Bottom section: Activity + Quick Stats */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-                        {/* Recent Activity */}
                         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <h3 className="text-base font-semibold text-gray-800">Recent Activity</h3>
                                     <p className="text-xs text-gray-400 mt-0.5">Recent check-ins, task updates and announcements.</p>
                                 </div>
-                                <button className="text-xs text-indigo-600 font-medium hover:underline">View all</button>
+                                <button
+                                    type="button"
+                                    onClick={() => navigate("/admin/attendance")}
+                                    className="text-xs text-indigo-600 font-medium hover:underline"
+                                >
+                                    View all
+                                </button>
                             </div>
 
-                            <ul className="space-y-3">
-                                {recentActivity.map((item) => (
-                                    <li key={item.id} className="flex items-start gap-3">
-                                        <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold ${avatarColors[item.color]}`}>
-                                            {item.avatar}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm text-gray-700">
-                                                <span className="font-medium">{item.user}</span>{" "}
-                                                <span className="text-gray-500">{item.action}</span>
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
-                                        </div>
-                                        <span className={`mt-2 w-2 h-2 rounded-full shrink-0 ${dotColors[item.color]}`} />
-                                    </li>
-                                ))}
-                            </ul>
+                            {recentActivity.length === 0 ? (
+                                <p className="py-8 text-center text-sm text-gray-400">
+                                    No recent activity yet.
+                                </p>
+                            ) : (
+                                <ul className="space-y-3">
+                                    {recentActivity.map((item) => (
+                                        <li key={item.id} className="flex items-start gap-3">
+                                            <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-semibold ${avatarColors[item.color]}`}>
+                                                {item.avatar}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm text-gray-700">
+                                                    <span className="font-medium">{item.user}</span>{" "}
+                                                    <span className="text-gray-500">{item.action}</span>
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-0.5">{item.time}</p>
+                                            </div>
+                                            <span className={`mt-2 w-2 h-2 rounded-full shrink-0 ${dotColors[item.color]}`} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
 
-                        {/* Quick Summary */}
                         <div className="flex flex-col gap-4">
-                            {/* Attendance Rate */}
                             <div className="bg-white rounded-xl border border-gray-200 p-5">
                                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Today's Attendance Rate</h3>
                                 <div className="flex items-end gap-2 mb-3">
-                                    <span className="text-3xl font-bold text-gray-800">75%</span>
-                                    <span className="text-sm text-green-500 font-medium mb-0.5">▲ On Track</span>
+                                    <span className="text-3xl font-bold text-gray-800">{summary.attendanceRate}%</span>
+                                    <span className={`text-sm font-medium mb-0.5 ${summary.attendanceRate >= 75 ? "text-green-500" : "text-amber-500"}`}>
+                                        {summary.attendanceRate >= 75 ? "▲ On Track" : "Needs attention"}
+                                    </span>
                                 </div>
-                                {/* Progress bar */}
                                 <div className="w-full bg-gray-100 rounded-full h-2">
-                                    <div className="bg-indigo-500 h-2 rounded-full" style={{ width: "75%" }} />
+                                    <div
+                                        className="bg-indigo-500 h-2 rounded-full"
+                                        style={{ width: `${summary.attendanceRate}%` }}
+                                    />
                                 </div>
                                 <div className="flex justify-between mt-2 text-xs text-gray-400">
-                                    <span>36 present</span>
-                                    <span>48 total</span>
+                                    <span>{summary.present} present</span>
+                                    <span>{summary.totalTeam} total</span>
                                 </div>
                             </div>
 
-                            {/* Announcements */}
                             <AnnouncementsCard
                                 title="Latest Announcements"
                                 items={announcementItems}
-                                onViewAll={() => console.log("View all announcements")}
+                                onViewAll={() => navigate("/admin/announcements")}
                                 className="flex-1"
                             />
                         </div>
-
                     </div>
                 </main>
             </div>
@@ -238,4 +387,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
